@@ -1,4 +1,4 @@
-#Parking Level Editor PRO
+Parking Level Editor PRO
 
 A custom Unity Editor tool for rapid creation of grid-based parking game levels. This tool replaces manual prop placement with a structured, scalable workflow using a grid system, prop palette, and controlled variation system.
 
@@ -123,12 +123,14 @@ Decoration (cones, props)
 Use drag painting for speed
 Use weighted variants for visual variation
 Finalize by cleaning up PropData if needed
+
 Best Practices
 Keep a consistent world scale across all prefabs
 Use variants for visual diversity, not gameplay logic
 Avoid manually moving placed objects; use the tool instead
 Keep variant weights balanced to avoid repetitive patterns
 Use low scale variation for realism
+
 Limitations
 Grid is currently planar (Y = 0 projection fallback)
 No built-in spline or road generation
