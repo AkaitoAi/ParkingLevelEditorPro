@@ -49,6 +49,11 @@ public class ParkingLevelEditor : EditorWindow
 
     private Dictionary<Vector2Int, GameObject> placedObjects = new Dictionary<Vector2Int, GameObject>();
 
+    private bool toolEnabled = true;
+
+    // ✅ NEW: prevents repeat actions on same cell
+    private Vector2Int lastActionGridPos = new Vector2Int(int.MinValue, int.MinValue);
+
     [MenuItem("Tools/Parking Level Editor PRO")]
     public static void Open()
     {
@@ -57,11 +62,18 @@ public class ParkingLevelEditor : EditorWindow
 
     private void OnEnable()
     {
+        SceneView.duringSceneGui -= OnSceneGUI;
         SceneView.duringSceneGui += OnSceneGUI;
+
         RebuildDictionary();
     }
 
     private void OnDisable()
+    {
+        SceneView.duringSceneGui -= OnSceneGUI;
+    }
+
+    private void OnDestroy()
     {
         SceneView.duringSceneGui -= OnSceneGUI;
     }
@@ -75,6 +87,20 @@ public class ParkingLevelEditor : EditorWindow
 
         drawFullGrid = EditorGUILayout.Toggle("Draw Grid", drawFullGrid);
         dragPaint = EditorGUILayout.Toggle("Drag Paint", dragPaint);
+
+        GUILayout.Space(10);
+
+        // Toggle button
+        Color prevColor = GUI.backgroundColor;
+        GUI.backgroundColor = toolEnabled ? Color.green : Color.red;
+
+        if (GUILayout.Button(toolEnabled ? "Tool: ON" : "Tool: OFF", GUILayout.Height(30)))
+        {
+            toolEnabled = !toolEnabled;
+            SceneView.RepaintAll();
+        }
+
+        GUI.backgroundColor = prevColor;
 
         GUILayout.Space(10);
 
@@ -141,6 +167,13 @@ public class ParkingLevelEditor : EditorWindow
 
     private void OnSceneGUI(SceneView sceneView)
     {
+        if (!toolEnabled) return;
+
+        Handles.BeginGUI();
+        GUI.color = Color.green;
+        GUILayout.Label("TOOL ACTIVE", EditorStyles.boldLabel);
+        Handles.EndGUI();
+
         Event e = Event.current;
 
         DrawGrid();
@@ -169,21 +202,43 @@ public class ParkingLevelEditor : EditorWindow
 
         if (selectedIndex < 0 || selectedIndex >= propEntries.Count) return;
 
+        // RESET on mouse up
+        if (e.type == EventType.MouseUp)
+        {
+            lastActionGridPos = new Vector2Int(int.MinValue, int.MinValue);
+        }
+
+        // LEFT CLICK = PLACE
         if (dragPaint && e.type == EventType.MouseDrag && e.button == 0)
         {
-            Place(gridPos);
+            if (lastActionGridPos != gridPos)
+            {
+                Place(gridPos);
+                lastActionGridPos = gridPos;
+            }
             e.Use();
         }
-
-        if (e.type == EventType.MouseDown && e.button == 0 && !e.alt)
+        else if (e.type == EventType.MouseDown && e.button == 0 && !e.alt)
         {
             Place(gridPos);
+            lastActionGridPos = gridPos;
             e.Use();
         }
 
-        if (e.type == EventType.MouseDown && e.button == 1)
+        // RIGHT CLICK = REMOVE (WITH DRAG)
+        if (dragPaint && e.type == EventType.MouseDrag && e.button == 1)
+        {
+            if (lastActionGridPos != gridPos)
+            {
+                Remove(gridPos);
+                lastActionGridPos = gridPos;
+            }
+            e.Use();
+        }
+        else if (e.type == EventType.MouseDown && e.button == 1)
         {
             Remove(gridPos);
+            lastActionGridPos = gridPos;
             e.Use();
         }
     }
